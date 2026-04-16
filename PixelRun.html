@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Pixel Run</title>
+  <title>Pixel Run – Nexora Edition</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -94,7 +94,7 @@
 </head>
 <body>
 
-<h1>Pixel Run</h1>
+<h1>Pixel Run – Nexora Edition</h1>
 <p>Leertaste / Pfeil hoch = springen, Pfeil runter = ducken.</p>
 
 <div id="wrapper">
@@ -181,13 +181,11 @@ function clearCanvas() {
 function spawnObstacle() {
   const s = Math.floor(score);
 
-  // 0–499 → nur Einzel-Kakteen
   if (s < 500) {
     spawnSingleCactus();
     return;
   }
 
-  // 500–999 → Einzel + Doppel-Kakteen
   if (s < 1000) {
     const r = Math.random();
     if (r < 0.75) spawnSingleCactus();
@@ -195,7 +193,6 @@ function spawnObstacle() {
     return;
   }
 
-  // 1000+ → Einzel + Doppel + Vögel
   const r = Math.random();
   if (r < 0.60) spawnSingleCactus();
   else if (r < 0.85) spawnDoubleCactus();
@@ -245,7 +242,7 @@ function spawnDoubleCactus() {
 }
 
 function spawnBird() {
-  let birdY = Math.random() < 0.5 ? groundY - 70 : groundY - 90;
+  let birdY = groundY - 55; // TIEF genug, dass man DUCKEN MUSS
 
   obstacles.push({
     kind: 'bird',
@@ -349,11 +346,25 @@ function drawGround() {
   ctx.stroke();
 }
 
-function drawDino() {
-  ctx.fillStyle = '#e5e7eb';
+function drawRainbowPlayer() {
+  const g = ctx.createLinearGradient(dino.x, dino.y, dino.x + dino.w, dino.y + dino.h);
+  g.addColorStop(0, "#ff0000");
+  g.addColorStop(0.2, "#ffa500");
+  g.addColorStop(0.4, "#ffff00");
+  g.addColorStop(0.6, "#00ff00");
+  g.addColorStop(0.8, "#00bfff");
+  g.addColorStop(1, "#8a2be2");
+
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(dino.x, dino.y, dino.w, dino.h);
-  ctx.fillStyle = '#020617';
-  ctx.fillRect(dino.x + dino.w - 8, dino.y + 6, 4, 4);
+
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 4;
+  ctx.shadowColor = g;
+  ctx.shadowBlur = 12;
+  ctx.strokeRect(dino.x, dino.y, dino.w, dino.h);
+
+  ctx.shadowBlur = 0;
 }
 
 function drawCactus(o) {
@@ -378,7 +389,7 @@ function drawBird(o) {
 function draw() {
   clearCanvas();
   drawGround();
-  drawDino();
+  drawRainbowPlayer();
   obstacles.forEach(o => o.kind === "cactus" ? drawCactus(o) : drawBird(o));
 }
 
