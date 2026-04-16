@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Nexora – Dino Run</title>
+  <title>Pixel Run</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -94,7 +94,7 @@
 </head>
 <body>
 
-<h1>Nexora – Dino Run</h1>
+<h1>Pixel Run</h1>
 <p>Leertaste / Pfeil hoch = springen, Pfeil runter = ducken.</p>
 
 <div id="wrapper">
@@ -179,39 +179,83 @@ function clearCanvas() {
 }
 
 function spawnObstacle() {
-  const currentScore = Math.floor(score);
+  const s = Math.floor(score);
 
-  const spawnCactus = Math.random() < 0.8 || currentScore < 1000;
-
-  if (spawnCactus) {
-    const type = Math.random();
-    let cactusWidth, cactusHeight;
-
-    if (type < 0.4) { cactusWidth = 18; cactusHeight = 40; }
-    else if (type < 0.75) { cactusWidth = 26; cactusHeight = 50; }
-    else { cactusWidth = 34; cactusHeight = 60; }
-
-    obstacles.push({
-      kind: 'cactus',
-      x: width + 10,
-      y: groundY - cactusHeight,
-      w: cactusWidth,
-      h: cactusHeight,
-      speed: baseSpeed
-    });
-  } else {
-    let birdY = Math.random() < 0.5 ? groundY - 70 : groundY - 90;
-
-    obstacles.push({
-      kind: 'bird',
-      x: width + 10,
-      y: birdY,
-      w: 34,
-      h: 24,
-      speed: baseSpeed + 0.5,
-      flapPhase: Math.random() * Math.PI * 2
-    });
+  // 0–499 → nur Einzel-Kakteen
+  if (s < 500) {
+    spawnSingleCactus();
+    return;
   }
+
+  // 500–999 → Einzel + Doppel-Kakteen
+  if (s < 1000) {
+    const r = Math.random();
+    if (r < 0.75) spawnSingleCactus();
+    else spawnDoubleCactus();
+    return;
+  }
+
+  // 1000+ → Einzel + Doppel + Vögel
+  const r = Math.random();
+  if (r < 0.60) spawnSingleCactus();
+  else if (r < 0.85) spawnDoubleCactus();
+  else spawnBird();
+}
+
+function spawnSingleCactus() {
+  const type = Math.random();
+  let cactusWidth, cactusHeight;
+
+  if (type < 0.4) { cactusWidth = 18; cactusHeight = 40; }
+  else if (type < 0.75) { cactusWidth = 26; cactusHeight = 50; }
+  else { cactusWidth = 34; cactusHeight = 60; }
+
+  obstacles.push({
+    kind: 'cactus',
+    x: width + 10,
+    y: groundY - cactusHeight,
+    w: cactusWidth,
+    h: cactusHeight,
+    speed: baseSpeed
+  });
+}
+
+function spawnDoubleCactus() {
+  const cactusWidth = 26;
+  const cactusHeight = 50;
+  const gap = 6;
+
+  obstacles.push({
+    kind: 'cactus',
+    x: width + 10,
+    y: groundY - cactusHeight,
+    w: cactusWidth,
+    h: cactusHeight,
+    speed: baseSpeed
+  });
+
+  obstacles.push({
+    kind: 'cactus',
+    x: width + 10 + cactusWidth + gap,
+    y: groundY - cactusHeight,
+    w: cactusWidth,
+    h: cactusHeight,
+    speed: baseSpeed
+  });
+}
+
+function spawnBird() {
+  let birdY = Math.random() < 0.5 ? groundY - 70 : groundY - 90;
+
+  obstacles.push({
+    kind: 'bird',
+    x: width + 10,
+    y: birdY,
+    w: 34,
+    h: 24,
+    speed: baseSpeed + 0.5,
+    flapPhase: Math.random() * Math.PI * 2
+  });
 }
 
 function cactusHitbox(o) {
@@ -229,7 +273,6 @@ function update(delta) {
   const dt = delta / 16.67;
 
   const speedFactor = 1 + Math.min(score / 3000, 1.5);
-  const currentSpeed = baseSpeed * speedFactor;
 
   const currentSpawnInterval = spawnInterval / speedFactor;
   spawnTimer += delta;
@@ -285,4 +328,91 @@ function update(delta) {
   }
 
   score += delta * 0.01 * speedFactor;
-  scoreEl.text
+  scoreEl.textContent = Math.floor(score);
+}
+
+function checkCollision(a, b) {
+  return !(
+    a.x + a.w < b.x ||
+    a.x > b.x + b.w ||
+    a.y + a.h < b.y ||
+    a.y > b.y + b.h
+  );
+}
+
+function drawGround() {
+  ctx.strokeStyle = '#4b5563';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  ctx.lineTo(width, groundY);
+  ctx.stroke();
+}
+
+function drawDino() {
+  ctx.fillStyle = '#e5e7eb';
+  ctx.fillRect(dino.x, dino.y, dino.w, dino.h);
+  ctx.fillStyle = '#020617';
+  ctx.fillRect(dino.x + dino.w - 8, dino.y + 6, 4, 4);
+}
+
+function drawCactus(o) {
+  ctx.fillStyle = '#16a34a';
+  ctx.fillRect(o.x + o.w * 0.4, o.y, o.w * 0.2, o.h);
+  ctx.fillRect(o.x, o.y + o.h * 0.3, o.w * 0.3, o.h * 0.18);
+  ctx.fillRect(o.x + o.w * 0.7, o.y + o.h * 0.45, o.w * 0.3, o.h * 0.18);
+}
+
+function drawBird(o) {
+  ctx.fillStyle = '#e5e7eb';
+  ctx.fillRect(o.x, o.y + 6, o.w * 0.7, o.h * 0.5);
+
+  const wingOffset = Math.sin(o.flapPhase) * 4;
+  ctx.beginPath();
+  ctx.moveTo(o.x + o.w * 0.3, o.y + 6);
+  ctx.lineTo(o.x + o.w * 0.6, o.y - 4 + wingOffset);
+  ctx.lineTo(o.x + o.w * 0.9, o.y + 6);
+  ctx.fill();
+}
+
+function draw() {
+  clearCanvas();
+  drawGround();
+  drawDino();
+  obstacles.forEach(o => o.kind === "cactus" ? drawCactus(o) : drawBird(o));
+}
+
+function gameLoop(timestamp) {
+  if (!running) return;
+  const delta = timestamp - lastTime;
+  lastTime = timestamp;
+
+  update(delta);
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener('keydown', e => {
+  const key = e.key.toLowerCase();
+  if (key === ' ' || key === 'arrowup') keys.jump = true;
+  if (key === 'arrowdown') keys.duck = true;
+});
+
+document.addEventListener('keyup', e => {
+  const key = e.key.toLowerCase();
+  if (key === ' ' || key === 'arrowup') keys.jump = false;
+  if (key === 'arrowdown') keys.duck = false;
+});
+
+startBtn.addEventListener('click', () => {
+  startBtn.style.display = "none";
+  resetGame();
+  startCountdown();
+});
+
+resetGame();
+</script>
+
+</body>
+</html>
